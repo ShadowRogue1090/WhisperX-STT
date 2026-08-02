@@ -1,51 +1,47 @@
 import os
 
-import whisperx
-import gc
-from whisperx.diarize import DiarizationPipeline
-from dotenv import load_dotenv
+from config import INPUT_DIR
 
-load_dotenv()
+from stages.stage_00_metadata import run_metadata_stage
+from stages.stage_01_transcribe import run_transcription_stage
+from stages.stage_02_align import run_alignment_stage
+from stages.stage_03_diarize import run_diarization_stage
+from stages.stage_04_merge import run_merge_stage
+from stages.stage_05_export import run_export_stage
 
-device = "cpu"
-audio_file = r"C:\Users\Owenp\Downloads\piper-singing-cut.wav"
-batch_size = 16  # reduce if low on GPU mem
-compute_type = "float32"  # change to "int8" if low on GPU mem (may reduce accuracy)
 
-# 1. Transcribe with original whisper (batched)
-model = whisperx.load_model("large-v3", device, compute_type=compute_type)
+def main():
 
-# save model to local path (optional)
-# model_dir = "/path/"
-# model = whisperx.load_model("large-v2", device, compute_type=compute_type, download_root=model_dir)
+    audio_files = [
+        os.path.join(INPUT_DIR, f)
+        for f in os.listdir(INPUT_DIR)
+        if f.lower().endswith(".wav")
+    ]
 
-audio = whisperx.load_audio(audio_file)
-result = model.transcribe(audio, batch_size=batch_size)
-print(result["segments"])  # before alignment
+    if not audio_files:
+        print("No WAV files found")
+        return
 
-# delete model if low on GPU resources
-# import gc; import torch; gc.collect(); torch.cuda.empty_cache(); del model
+    for audio_file in audio_files:
 
-# 2. Align whisper output
-model_a, metadata = whisperx.load_align_model(
-    language_code=result["language"], device=device
-)
-result = whisperx.align(
-    result["segments"], model_a, metadata, audio, device, return_char_alignments=False
-)
+        print("\n==============================")
+        print(f"Processing: {audio_file}")
+        print("==============================\n")
 
-print(result["segments"])  # after alignment
+        run_metadata_stage(audio_file)
 
-# delete model if low on GPU resources
-# import gc; import torch; gc.collect(); torch.cuda.empty_cache(); del model_a
+        run_transcription_stage(audio_file)
 
-# 3. Assign speaker labels
-diarize_model = DiarizationPipeline(token=os.getenv("DIARIZATION-TOKEN"), device=device)
+        run_alignment_stage(audio_file)
 
-# add min/max number of speakers if known
-diarize_segments = diarize_model(audio, min_speakers=3, max_speakers=3)
-# diarize_model(audio, min_speakers=min_speakers, max_speakers=max_speakers)
+        run_diarization_stage(audio_file)
 
-result = whisperx.assign_word_speakers(diarize_segments, result)
-print(diarize_segments)
-print(result["segments"])  # segments are now assigned speaker IDs
+        run_merge_stage(audio_file)
+
+        run_export_stage(audio_file)
+
+    print("\nALL COMPLETE")
+
+
+if __name__ == "__main__":
+    main()
