@@ -1,4 +1,8 @@
 import os
+import gc
+import sys
+import torch
+import warnings
 
 from config import INPUT_DIR
 
@@ -8,9 +12,6 @@ from stages.stage_02_align import run_alignment_stage
 from stages.stage_03_diarize import run_diarization_stage
 from stages.stage_04_merge import run_merge_stage
 from stages.stage_05_export import run_export_stage
-
-import torch
-import warnings
 
 warnings.filterwarnings("ignore", message="triton not found")
 
@@ -61,9 +62,6 @@ def main():
             continue
 
     print("\nALL COMPLETE")
-
-    import gc
-    import sys
 
     gc.collect()
     sys.exit(0)

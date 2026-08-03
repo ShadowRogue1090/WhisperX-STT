@@ -23,7 +23,6 @@ def load_model():
             DEVICE,
             compute_type=COMPUTE_TYPE,
             language=LANGUAGE,
-            batch_size=BATCH_SIZE,
         )
 
     return _model
