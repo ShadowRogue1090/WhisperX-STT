@@ -167,15 +167,18 @@ def run_export_stage(audio_file):
     final_file = stage_file(audio_file, "04_final.json")
 
     with open(final_file, encoding="utf8") as f:
-
         result = json.load(f)
 
-    srt_output = stage_file(audio_file, "transcript.srt")
+    # Get original filename without extension
+    base_name = os.path.splitext(os.path.basename(audio_file))[0]
 
-    md_output = stage_file(audio_file, "transcript.md")
+    # Save alongside the stage files using the original name
+    output_dir = os.path.dirname(final_file)
+
+    srt_output = os.path.join(output_dir, f"{base_name}.srt")
+    md_output = os.path.join(output_dir, f"{base_name}.md")
 
     export_srt(result, srt_output)
-
     export_markdown(result, md_output)
 
-    print("Export complete")
+    print(f"Export complete:\n{srt_output}\n{md_output}")
