@@ -4,9 +4,34 @@ import json
 import whisperx
 from whisperx.diarize import DiarizationPipeline
 
-from config import DEVICE, DIARIZATION_TOKEN, MIN_SPEAKERS, MAX_SPEAKERS
+from config import (
+    DEVICE,
+    DIARIZATION_TOKEN,
+    MIN_SPEAKERS,
+    MAX_SPEAKERS,
+)
 
 from utils.files import stage_file
+
+_pipeline = None
+
+
+def load_diarization_model():
+
+    global _pipeline
+
+    if _pipeline is None:
+
+        print("Loading diarization model")
+
+        _pipeline = DiarizationPipeline(
+            token=DIARIZATION_TOKEN,
+            device=DEVICE,
+        )
+
+        print("Diarization model loaded")
+
+    return _pipeline
 
 
 def run_diarization_stage(audio_file):
@@ -18,12 +43,18 @@ def run_diarization_stage(audio_file):
         print("Skipping diarization")
         return
 
+    print("Loading audio")
+
     audio = whisperx.load_audio(audio_file)
 
-    pipeline = DiarizationPipeline(token=DIARIZATION_TOKEN, device=DEVICE)
+    pipeline = load_diarization_model()
+
+    print("Running diarization")
 
     diarize_segments = pipeline(
-        audio, min_speakers=MIN_SPEAKERS, max_speakers=MAX_SPEAKERS
+        audio,
+        min_speakers=MIN_SPEAKERS,
+        max_speakers=MAX_SPEAKERS,
     )
 
     diarize_segments.to_json(output)

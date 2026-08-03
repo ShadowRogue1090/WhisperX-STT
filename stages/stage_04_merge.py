@@ -16,17 +16,19 @@ def run_merge_stage(audio_file):
         print("Skipping merge")
         return
 
-    # Load aligned Whisper output
+    print("Loading alignment")
 
     with open(stage_file(audio_file, "02_alignment.json"), encoding="utf8") as f:
 
         result = json.load(f)
 
-    # Load diarization results
+    print("Loading diarization")
 
-    diarize_segments = pd.read_json(stage_file(audio_file, "03_diarization.json"))
+    with open(stage_file(audio_file, "03_diarization.json"), encoding="utf8") as f:
 
-    # Assign speakers to words
+        diarize_segments = pd.DataFrame(json.load(f))
+
+    print("Assigning speakers")
 
     result = whisperx.assign_word_speakers(diarize_segments, result)
 

@@ -18,7 +18,13 @@ def load_model():
 
         print("Loading Whisper model")
 
-        _model = whisperx.load_model(MODEL_NAME, DEVICE, compute_type=COMPUTE_TYPE)
+        _model = whisperx.load_model(
+            MODEL_NAME,
+            DEVICE,
+            compute_type=COMPUTE_TYPE,
+            language=LANGUAGE,
+            batch_size=BATCH_SIZE,
+        )
 
     return _model
 

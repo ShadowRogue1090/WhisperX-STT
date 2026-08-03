@@ -1,6 +1,6 @@
 import os
 import json
-
+import torch
 import whisperx
 
 from config import DEVICE
@@ -17,20 +17,38 @@ def run_alignment_stage(audio_file):
         print("Skipping alignment")
         return
 
-    with open(stage_file(audio_file, "01_transcription.json"), encoding="utf8") as f:
+    transcription_file = stage_file(audio_file, "01_transcription.json")
 
+    with open(transcription_file, encoding="utf8") as f:
         result = json.load(f)
+
+    if not result.get("segments"):
+        raise RuntimeError("No transcription segments available for alignment")
 
     audio = whisperx.load_audio(audio_file)
 
     model_a, metadata = whisperx.load_align_model(
-        language_code=result["language"], device=DEVICE
+        language_code=result["language"],
+        device=DEVICE,
     )
 
-    aligned = whisperx.align(result["segments"], model_a, metadata, audio, DEVICE)
+    aligned = whisperx.align(
+        result["segments"],
+        model_a,
+        metadata,
+        audio,
+        DEVICE,
+    )
 
-    with open(output, "w") as f:
+    with open(output, "w", encoding="utf8") as f:
+        json.dump(
+            aligned,
+            f,
+            indent=4,
+            ensure_ascii=False,
+        )
 
-        json.dump(aligned, f, indent=4)
-
+    del model_a
+    if DEVICE == "cuda":
+        torch.cuda.empty_cache()
     print("Alignment complete")

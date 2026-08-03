@@ -4,3 +4,6 @@ RAW Audio/
 Transcripts/
 working/
 models/
+.vscode/
+.venv*
+CTranslate2-rocm/

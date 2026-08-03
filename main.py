@@ -9,6 +9,22 @@ from stages.stage_03_diarize import run_diarization_stage
 from stages.stage_04_merge import run_merge_stage
 from stages.stage_05_export import run_export_stage
 
+import torch
+import warnings
+
+warnings.filterwarnings("ignore", message="triton not found")
+
+print("==============================")
+print("PyTorch:", torch.__version__)
+print("HIP:", torch.version.hip)
+print("GPU available:", torch.cuda.is_available())
+
+if torch.cuda.is_available():
+    print("GPU:", torch.cuda.get_device_name(0))
+    print("VRAM GB:", torch.cuda.get_device_properties(0).total_memory / 1024**3)
+
+print("==============================")
+
 
 def main():
 
@@ -28,19 +44,29 @@ def main():
         print(f"Processing: {audio_file}")
         print("==============================\n")
 
-        run_metadata_stage(audio_file)
+        try:
 
-        run_transcription_stage(audio_file)
+            run_metadata_stage(audio_file)
+            run_transcription_stage(audio_file)
+            run_alignment_stage(audio_file)
+            run_diarization_stage(audio_file)
+            run_merge_stage(audio_file)
+            run_export_stage(audio_file)
 
-        run_alignment_stage(audio_file)
+        except Exception as e:
 
-        run_diarization_stage(audio_file)
+            print(f"\nFAILED: {audio_file}")
+            print(e)
 
-        run_merge_stage(audio_file)
-
-        run_export_stage(audio_file)
+            continue
 
     print("\nALL COMPLETE")
+
+    import gc
+    import sys
+
+    gc.collect()
+    sys.exit(0)
 
 
 if __name__ == "__main__":
